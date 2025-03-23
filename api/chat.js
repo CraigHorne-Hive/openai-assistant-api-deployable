@@ -20,7 +20,21 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await buffer(req);
-    const { messages, threadId } = JSON.parse(rawBody.toString());
+    const bodyText = rawBody.toString();
+
+    let body;
+    try {
+      body = JSON.parse(bodyText);
+    } catch (err) {
+      console.error("❌ Invalid JSON body:", bodyText);
+      return res.status(400).json({ error: "Invalid JSON in request body." });
+    }
+
+    const { messages, threadId } = body;
+
+    if (!messages || !threadId) {
+      return res.status(400).json({ error: "Missing required fields: messages or threadId" });
+    }
 
     const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
@@ -40,7 +54,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ role: "assistant", content: assistantMessage });
   } catch (err) {
-    console.error("Error in handler:", err);
+    console.error("🔥 Handler error:", err);
     res.status(500).json({ error: "Something went wrong." });
   }
 }
