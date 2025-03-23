@@ -30,13 +30,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Invalid JSON in request body." });
     }
 
-    const { messages, threadId } = body;
+    const { messages, threadId, assistantId } = body;
 
-    if (!messages || !threadId) {
-      return res.status(400).json({ error: "Missing required fields: messages or threadId" });
+    if (!messages || !threadId || !assistantId) {
+      return res.status(400).json({ error: "Missing required fields: messages, threadId or assistantId" });
     }
 
-    const response = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+    // Step 1: Add user message to the thread
+    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -49,10 +50,56 @@ export default async function handler(req, res) {
       })
     });
 
-    const data = await response.json();
-    const assistantMessage = data.content?.[0]?.text?.value || "No response from assistant.";
+    // Step 2: Create a run
+    const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+        "OpenAI-Beta": "assistants=v2"
+      },
+      body: JSON.stringify({
+        assistant_id: assistantId
+      })
+    });
 
-    res.status(200).json({ role: "assistant", content: assistantMessage });
+    const run = await runResponse.json();
+
+    // Step 3: Poll run status until it's complete
+    let runStatus = run.status;
+    let finalRun = run;
+
+    while (runStatus !== "completed" && runStatus !== "failed") {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 sec
+
+      const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`, {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "OpenAI-Beta": "assistants=v2"
+        }
+      });
+
+      finalRun = await statusResponse.json();
+      runStatus = finalRun.status;
+    }
+
+    if (runStatus === "failed") {
+      return res.status(500).json({ error: "Assistant run failed." });
+    }
+
+    // Step 4: Retrieve latest messages
+    const messagesResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "OpenAI-Beta": "assistants=v2"
+      }
+    });
+
+    const messagesData = await messagesResponse.json();
+    const assistantMessages = messagesData.data.filter(msg => msg.role === "assistant");
+    const lastMessage = assistantMessages[0]?.content?.[0]?.text?.value || "No response.";
+
+    res.status(200).json({ role: "assistant", content: lastMessage });
   } catch (err) {
     console.error("🔥 Handler error:", err);
     res.status(500).json({ error: "Something went wrong." });
