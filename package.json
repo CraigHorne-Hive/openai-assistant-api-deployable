@@ -1,0 +1,16 @@
+{
+  "name": "openai-assistant-api",
+  "version": "1.0.0",
+  "description": "Backend for custom GPT Assistant using OpenAI API on Vercel",
+  "main": "api/chat.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "micro": "^9.3.4"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
+  }
+}
