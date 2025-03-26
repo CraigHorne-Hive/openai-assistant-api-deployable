@@ -7,6 +7,7 @@
     "start": "vercel dev"
   },
   "dependencies": {
+    "marked": "^15.0.7",
     "micro": "^9.3.4"
   },
   "engines": {
