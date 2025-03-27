@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     try {
       body = JSON.parse(bodyText);
     } catch (err) {
-      console.error("❌ Invalid JSON body:", bodyText);
+      console.error("❌ Invalid JSON body:\n", bodyText);
       return res.status(400).json({ error: "Invalid JSON in request body." });
     }
 
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         role: "user",
-        content: messages[messages.length - 1].content
+        content: messages?.[messages.length - 1]?.content || "No message provided"
       })
     });
 
