@@ -5,6 +5,9 @@ const openai = new OpenAI({
 });
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
   try {
     const thread = await openai.beta.threads.create();
     res.status(200).json({ threadId: thread.id });
