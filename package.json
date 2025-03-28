@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "marked": "^15.0.7",
+    "micro": "^10.0.1",
     "openai": "^4.89.1"
   },
   "engines": {
