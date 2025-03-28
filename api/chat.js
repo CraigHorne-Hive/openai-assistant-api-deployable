@@ -97,7 +97,9 @@ export default async function handler(req, res) {
 
     const messagesData = await messagesResponse.json();
     const assistantMessages = messagesData.data.filter(msg => msg.role === "assistant");
-    const lastMessage = assistantMessages[0]?.content?.[0]?.text?.value || "No response.";
+    const lastMessage = assistantMessages.at(-1)?.content?.[0]?.text?.value || "No response.";
+
+    console.log("✅ Final assistant response:", lastMessage);
 
     res.status(200).json({ role: "assistant", content: lastMessage });
   } catch (err) {
