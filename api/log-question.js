@@ -1,7 +1,19 @@
 export default async function handler(req, res) {
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    return res.status(200).end();
+  }
+
+  // Allow POST only
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
+
+  // Set CORS headers for the actual POST request
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
   try {
     const { question, source } = req.body;
