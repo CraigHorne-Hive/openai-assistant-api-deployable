@@ -46,7 +46,8 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         role: "user",
-        content: messages?.[messages.length - 1]?.content || "No message provided"
+        content: messages?.[0]?.content || "No message provided"
+
       })
     });
 
