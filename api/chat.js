@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     }
 
     // Step 1: Add user message to the thread
-    await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
+    const messageRes = await fetch(`https://api.openai.com/v1/threads/${threadId}/messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -49,6 +49,14 @@ export default async function handler(req, res) {
         content: messages?.[messages.length - 1]?.content || "No message provided"
       })
     });
+
+    if (!messageRes.ok) {
+      const errText = await messageRes.text();
+      throw new Error(`Failed to add message: ${errText}`);
+    }
+
+    // ⏳ Wait for message to register
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Step 2: Create a run
     const runResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs`, {
@@ -70,7 +78,7 @@ export default async function handler(req, res) {
     let finalRun = run;
 
     while (runStatus !== "completed" && runStatus !== "failed") {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 sec
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const statusResponse = await fetch(`https://api.openai.com/v1/threads/${threadId}/runs/${run.id}`, {
         headers: {
@@ -113,3 +121,4 @@ export const config = {
     bodyParser: false,
   },
 };
+
